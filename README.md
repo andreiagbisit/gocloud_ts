@@ -21,7 +21,7 @@ It efficiently tracks employee and intern <strong>time-in</strong> and <strong>t
   <li>Download <strong>mysql-installer-community-8.0.x.x.msi</strong> from <a href="https://dev.mysql.com/downloads/installer/">MySQL Downloads</a>.</li>
   <li>Choose setup type <strong>Full</strong>.</li>
   <li>Use a custom port (e.g., <code>3307</code>) to avoid potential conflicts with web servers installed on your machine, if you have any (e.g.: XAMPP).</li>
-  <li>You may also use a different X protocol port other than the provided default (e.g.: you may use 33061 instead of 33060).</li>
+  <li>You may also use a different X protocol port other than the provided default (e.g.: you may use <code>33061</code> instead of <code>33060</code>).</li>
 </ul>
 
 <hr>
