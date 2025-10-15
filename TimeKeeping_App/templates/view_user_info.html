@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {{ employee.username }} | User Information
+{% endblock %}
+
+{% block nav %}
+    <nav class="navbar navbar-dark navbar-expand-lg navbar-custom">
+        <div class="container-fluid">
+            <div class="nav-logo navbar-brand">
+                <img src="/static/images/gc-logo-8.png" height="52" class="align-top">
+            </div>
+
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                <ul class="navbar-nav ms-auto ml-auto">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {{ user.username }}
+                        </a>
+                    
+                        <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">
+                            <a class="dropdown-item" href="{% url 'logout_admin' %}"><span class="text-secondary"><i class="fas fa-sign-out-alt"></i> | Log Out</span></a>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'admin_dashboard' %}"> <i class="fas fa-sign-in-alt"></i> | Log In</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+{% endblock %}
+
+{% block content %}
+    <div class="category-header-2 shadow">
+        <div class="text-section">
+            <p class="welcome-text">
+                {{ employee.first_name }} {% if employee.middle_name %}{{ employee.middle_name }} {% endif %}{{ employee.last_name }}
+            </p>
+
+            <h1>
+                <b>User Information</b>
+            </h1>
+        </div>
+        <img src="/static/images/3d-7.png">
+    </div>
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-xl-4">
+                <div class="user-info">
+                    <div class="card-header card-header-custom" style="background-color: rgb(255 255 255 / 3%);">
+                        <span class="h5 font-weight-bold text-secondary">First Name</span>
+                    </div>
+                    <div class="card-body card-body-custom text-secondary">
+                        {{ employee.first_name }}
+                    </div>
+                </div>
+            </div>
+    
+            <div class="col-xl-4">
+                <div class="user-info">
+                    <div class="card-header card-header-custom" style="background-color: rgb(255 255 255 / 3%);">
+                        <span class="h5 font-weight-bold text-secondary">Middle Name</span>
+                    </div>
+                    <div class="card-body card-body-custom text-secondary">
+                        {{ employee.middle_name }}
+                    </div>
+                </div>
+            </div>
+    
+            <div class="col-xl-4">
+                <div class="user-info">
+                    <div class="card-header card-header-custom" style="background-color: rgb(255 255 255 / 3%);">
+                        <span class="h5 font-weight-bold text-secondary">Last Name</span>
+                    </div>
+                    <div class="card-body card-body-custom text-secondary">
+                        {{ employee.last_name }}
+                    </div>
+                </div>
+            </div>
+    
+            <div class="col-xl-4">
+                <div class="user-info">
+                    <div class="card-header card-header-custom" style="background-color: rgb(255 255 255 / 3%);">
+                        <span class="h5 font-weight-bold text-secondary">Email</span>
+                    </div>
+                    <div class="card-body card-body-custom text-secondary">
+                        {{ employee.email }}
+                    </div>
+                </div>
+            </div>
+    
+            <div class="col-xl-4">
+                <div class="user-info">
+                    <div class="card-header card-header-custom" style="background-color: rgb(255 255 255 / 3%);">
+                        <span class="h5 font-weight-bold text-secondary">Date Joined</span>
+                    </div>
+                    <div class="card-body card-body-custom text-secondary">
+                        {{ employee.joined_date }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editEmployeeModal" tabindex="-1" role="dialog" aria-labelledby="editEmployeeModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="add-employee-modal modal-header">
+                    <h5 class="modal-title font-weight-bold text-white" id="editEmployeeModalLabel">
+                        <i class="fas fa-edit"></i> Edit User Information
+                    </h5>
+                    
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span class="text-white" aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                
+                <div class="modal-body m-2 px-5">
+                    <div class="d-flex justify-content-center mb-4">
+                        <img src="/static/images/3d-11.png" height="250">
+                    </div>
+
+                    <form id="editEmployeeForm" method="POST" action="{% url 'edit_employee' employee.id %}">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label class="font-weight-bold text-secondary" for="{{ form.username.id_for_label }}">Username</label>
+                            {% if employee.employee_type == "Intern" %}
+                                <input type="text" name="username" id="username" class="form-control" value="{{ employee.username }}" readonly>
+                            {% else %}
+                            <input type="text"
+                                name="username"
+                                id="username"
+                                class="form-control {% if form.username.errors %}is-invalid{% endif %}"
+                                value="{{ form.username.data|default:form.instance.username }}">
+                            {% for error in form.username.errors %}
+                                <div class="invalid-feedback">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}    
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label class="font-weight-bold text-secondary" for="{{ form.employee_type.id_for_label }}">Employee Type</label>
+                            {% if employee.employee_type == 'Employee' %}
+                                <select name="employee_type" id="{{ form.employee_type.id_for_label }}" class="form-control" disabled>
+                                    <option value="Employee" selected>Employee</option>
+                                </select>
+                                <input type="hidden" name="employee_type" value="Employee">
+                                <small class="form-text text-muted">Employee type cannot be changed once set to Employee.</small>
+                            {% else %}
+                                {{ form.employee_type }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="font-weight-bold text-secondary" for="{{ form.first_name.id_for_label }}">First Name</label>
+                            {{ form.first_name }}
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="font-weight-bold text-secondary" for="{{ form.middle_name.id_for_label }}">Middle Name</label>
+                            {{ form.middle_name }}
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="font-weight-bold text-secondary" for="{{ form.last_name.id_for_label }}">Last Name</label>
+                            {{ form.last_name }}
+                        </div>
+                    
+                        <div class="form-group">
+                            <label class="font-weight-bold text-secondary" for="{{ form.email.id_for_label }}">Email</label>
+                            <input type="email"
+                                   name="{{ form.email.name }}"
+                                   id="{{ form.email.id_for_label }}"
+                                   class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+                                   value="{{ form.email.value|default_if_none:'' }}"
+                                   required>
+                            {% for error in form.email.errors %}
+                                <div class="invalid-feedback">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    
+                        <div class="form-group mb-4">
+                            <label class="font-weight-bold text-secondary" for="{{ form.joined_date.id_for_label }}">Join Date</label>
+                            <input type="date" name="joined_date" id="{{ form.joined_date.id_for_label }}" 
+                                   class="form-control" value="{{ employee.joined_date|date:'Y-m-d' }}">
+                        </div>
+                        
+                        <hr class="mt-4">
+                        
+                        <div class="mx-3 d-flex justify-content-center">
+                            <button type="submit" class="btn btn-primary"><i class='fas fa-save'></i> Save Changes</button>
+                        </div>
+                    </form>
+                    <!-- Warning Modal -->
+                    <div class="modal fade" id="warningModal" tabindex="-1" role="dialog" aria-labelledby="warningModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+                          <div class="modal-content">
+                            <div class="modal-header bg-warning">
+                              <h5 class="modal-title" id="warningModalLabel">Confirm Conversion</h5>
+                              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                              </button>
+                            </div>
+                            <div class="modal-body">
+                              <p>You are converting an <strong>Intern</strong> to an <strong>Employee</strong>. This action will update the username and password automatically. Are you sure you want to proceed?</p>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                              <button id="confirmConversion" type="button" class="btn btn-primary">Yes, Proceed</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                    <script>
+                        document.getElementById('editEmployeeForm').addEventListener('submit', function(e) {
+                            // Get the current employee type from the server context
+                            var currentEmployeeType = "{{ employee.employee_type }}";
+                            
+                            // Retrieve the employee type field value (if editable)
+                            var employeeTypeField = document.getElementById("{{ form.employee_type.id_for_label }}");
+                            var newEmployeeType = employeeTypeField ? employeeTypeField.value : currentEmployeeType;
+                            
+                            // If converting from Intern to Employee, prevent default submission and show modal
+                            if (currentEmployeeType === "Intern" && newEmployeeType === "Employee") {
+                                e.preventDefault();
+                                $('#warningModal').modal('show');
+                            }
+                        });
+                        
+                        // Handle modal confirmation click
+                        document.getElementById('confirmConversion').addEventListener('click', function() {
+                            // Close modal and submit the form
+                            $('#warningModal').modal('hide');
+                            document.getElementById('editEmployeeForm').submit();
+                        });
+                    </script>
+                        
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mx-3 mt-3 mb-3 d-flex justify-content-center">
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editEmployeeModal">
+            <i class="fas fa-edit"></i> Edit
+        </button>
+        
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary mx-2"><i class="fas fa-caret-left"></i> Back</a>
+    </div>
+{% endblock %}
+
+{% block footer %}
+    <div>
+        <footer class="footer-custom text-white mt-auto">
+            <div class="footer-content-area text-center p-3">
+
+                <div class="footer-logos d-flex justify-content-center mt-2 mb-2">
+                    <img src="/static/images/gc.png" alt="GC Logo" class="logo-img-gc mt-2 mx-2">
+                </div>
+
+                <div class="footer-copyright text-center text-dark p-3">
+                    © 2025 
+                    <a class="gc-link text-dark mb-2" href="https://gocloudgroup.com/">GOCLOUD Inc.</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    {% if show_modal %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            $('#editEmployeeModal').modal('show');
+        });
+    </script>
+    {% endif %}
+
+{% endblock %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const employeeType = "{{ employee.employee_type }}";
+        const employeeTypeSelect = document.querySelector('#{{ form.employee_type.id_for_label }}');
+        
+        if (employeeType === 'Employee') {
+            employeeTypeSelect.disabled = true;
+            employeeTypeSelect.style.backgroundColor = '#e9ecef';
+            employeeTypeSelect.style.cursor = 'not-allowed';
+        }
+    });
+</script>

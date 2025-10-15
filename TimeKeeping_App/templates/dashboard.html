@@ -1,0 +1,329 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if current_employee %}
+        {{ current_employee.username }} |  GOCLOUD Timekeeping System
+    {% else %}
+        Log In (Employee) |  GOCLOUD Timekeeping System
+    {% endif %}
+{% endblock %}
+
+{% block nav %}
+    {% if current_employee %}
+        <nav class="navbar navbar-dark navbar-expand-lg navbar-custom">
+            <div class="container-fluid">
+                <div class="nav-logo navbar-brand">
+                    <img src="/static/images/gc-logo-8.png" height="52" class="align-top">
+                </div>
+
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                    <ul class="navbar-nav ms-auto ml-auto">
+                        {% if current_employee %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                {{ current_employee.username }}
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">
+                                <a class="dropdown-item" href="{% url 'change_password' %}">
+                                    <span class="text-secondary"><i class="fas fa-key"></i> | Change Password</span>
+                                </a>
+                                <a class="dropdown-item" href="{% url 'logout' %}">
+                                    <span class="text-secondary"><i class="fas fa-sign-out-alt"></i> | Log Out</span>
+                                </a>
+                            </div>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/"> <i class="fas fa-sign-in-alt"></i> | Log In</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% if current_employee %}
+        <div class="category-header">
+            <div class="text-section">
+                <p class="welcome-text">Welcome, <b>{{ current_employee.first_name }} {{ current_employee.last_name }}!</b></p>
+                <h1><b>Timekeeping</b></h1>
+            </div>
+            <img src="/static/images/3d-1.png" alt="Employee Icon">
+        </div>
+        
+        <div class="d-flex justify-content-center">
+            <div id="clock" class="clock shadow">
+                <h1 style="margin-bottom: -6px;"><i class='far fa-clock'></i></h1>
+                <div id="time" class="time" style="margin-bottom: -15px;"></div>
+                <div id="date" class="date" style="margin-bottom: 0.1px;"></div>
+            </div>
+        </div>
+
+        {% if error_message %}
+            <div class="d-flex justify-content-center mt-3">
+                <div class="alert alert-warning alert-dismissible fade show error-message text-center" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> {{ error_message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="d-flex justify-content-center">
+                    <div class="alert alert-{{ message.tags }} text-center" role="alert">
+                        <i class="fas fa-info-circle"></i> {{ message }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <div class="mt-5 mb-4 text-center {% if status == 'Clocked In' %}status-active{% elif status == 'Clocked Out' %}status-inactive{% else %}status-pending{% endif %}">
+            <span class="status-text-area-1 h5 py-3 px-2">
+                <span class="status-icon text-secondary"><i class="fas fa-info-circle"></i></span> <span class="py-2 px-3 status-text text-secondary">{{ status }}</span>
+            </span>
+        </div>
+        
+        {% with latest_record=time_records.first %}
+        {% if latest_record and latest_record.lunch_start and not latest_record.lunch_end %}
+            <div class="mt-5 mb-5 text-center status-indicator lunch-active">
+                <span class="status-text-area-2 h5 py-3 px-2">
+                    <span class="status-icon text-secondary"><i class="fas fa-utensils"></i></span> <span class="py-2 px-3 status-text text-secondary">On Lunch Break</span>
+                </span>
+            </div>
+        {% endif %}
+        {% endwith %}
+        
+        <form method="post" class="px-0 pb-2">
+            {% csrf_token %}
+            <input type="hidden" name="employee" value="{{ current_employee.id }}">
+            <input type="hidden" name="password" value="{{ current_employee.password }}">
+
+            <div class="d-flex flex-column flex-md-row gap-2">
+                <button class="btn btn-lg btn-success px-4 pt-3 pb-2 m-1 flex-fill tall-btn success-custom" name="action" value="clock_in">
+                    <span class="h4">
+                        <i class="fas fa-door-open"></i> | <b>CLOCK IN</b>
+                    </span>
+                </button>
+
+                <button class="btn btn-lg btn-danger pt-3 pb-2 m-1 flex-fill tall-btn danger-custom" name="action" value="clock_out">
+                    <span class="h4">
+                        <i class="fas fa-door-closed"></i> | <b>CLOCK OUT</b>
+                    </span>
+                </button>
+
+                <button class="btn btn-lg btn-warning px-2 pt-3 pb-2 m-1 flex-fill text-uppercase tall-btn warning-custom" name="action" value="lunch_toggle">
+                    <span class="h4">
+                        <i class="fas fa-utensils"></i> | <b>{{ lunch_button_label }}</b>
+                    </span>
+                </button>
+            </div>
+        </form>
+        
+        <div class="card shadow mb-4">
+            <div class="card-header bg-secondary py-3">
+                <h5 class="m-0 font-weight-bold text-light text-center">Time-in/Time-out Record</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered" id="dataTable" width="100%">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date</th>
+                                <!-- <th>Employee</th> -->
+                                <th>Clock In</th>
+                                <th>Clock Out</th>
+                                <th>Lunch Break Hours</th>
+                                <th>Total Hours</th>
+                                <th>Overtime Hours</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for record in time_records %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ record.date }}</td>
+                                <!-- <td>{{ record.employee.username }}</td> -->
+                                <td>{{ record.clock_in|time:"g:i A"|default:"None" }}</td>
+                                <td>{{ record.clock_out|time:"g:i A"|default:"None" }}</td>
+                                <td>{{ record.lunch_break_duration|default:"None" }}</td>
+                                <td>{{ record.total_hours|default:"None" }}</td>
+                                <td>{{ record.overtime_hours|default:"None" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {# Auto-logout script wrapped in an IIFE to ensure variables are defined in scope #}
+        <script>
+            (function() {
+                //var autoLogoutTimeout = 5000; // 5 seconds for testing
+                var autoLogoutTimeout = 15 * 60 * 1000; // 15 minutes in milliseconds
+                var logoutTimer;
+
+                function triggerLogout() {
+                    console.log("Auto-logout triggered.");
+                    var alertBar = document.createElement('div');
+                    alertBar.className = 'd-flex justify-content-center mt-3';
+                    alertBar.innerHTML = '<div class="alert alert-warning alert-dismissible fade show error-message text-center" role="alert"><i class="fas fa-exclamation-triangle"></i> Session has expired. (Don\'t worry, your clock-in status will be saved.) <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>';
+                    document.body.prepend(alertBar);
+                    setTimeout(function () {
+                        window.location.href = "{% url 'dashboard' %}?session_timed_out=1";
+                    }, 1500);
+                }
+
+                function resetLogoutTimer() {
+                    console.log("Resetting logout timer.");
+                    clearTimeout(logoutTimer);
+                    logoutTimer = setTimeout(triggerLogout, autoLogoutTimeout);
+                }
+
+                window.addEventListener("load", function() {
+                    console.log("Auto-logout script loaded.");
+                    resetLogoutTimer();
+                });
+                document.addEventListener("mousemove", resetLogoutTimer);
+                document.addEventListener("keypress", resetLogoutTimer);
+                document.addEventListener("click", resetLogoutTimer);
+            })();
+        </script>
+    {% else %}
+    
+    {% if error_message %}
+        <div class="d-flex justify-content-center mt-3">
+            <div class="alert alert-warning alert-dismissible fade show error-message text-center" role="alert">
+                <i class="fas fa-exclamation-triangle"></i> {{ error_message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        </div>
+    {% endif %}
+    
+    <div style="margin-top: 8%;">
+        {% if not current_employee and reset_success %}
+            <div class="alert alert-success text-center mt-3">
+                <i class="fas fa-check-circle"></i> {{ reset_success }}
+            </div>
+        {% endif %}
+        <div class="login-form-custom d-flex justify-content-center">
+            <div class="row">
+                <div class="login-form-custom-container col-xl-6 shadow">
+                    <img class="login-logo mt-2 mb-4" src="/static/images/gocloud.png">
+                    
+                    <div class="mb-4">
+                        <p>Please log in to continue.</p>
+                    </div>
+
+                    <div class="mb-5 text-center">
+                        <span class="status-text-area-1 h5 py-3 px-2">
+                            <span class="status-icon text-secondary"><i class="fas fa-user-tie"></i></span> <span class="py-2 px-3 status-text text-secondary">
+                                Employee
+                            </span>
+                        </span>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="input-group mb-3">
+                            <input type="text" name="username" class="form-control" placeholder="Username" required>
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password">
+                                    <i class="fa fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-center mt-2">
+                            <a href="{% url 'forgot_password' %}">Forgot Password?</a>
+                        </div>
+
+                        <div style="transform:scale(1.0);" class="g-recaptcha mt-3" data-sitekey="{{ recaptcha_site_key }}"></div>
+                        
+                        <button class="login-button btn btn-primary w-100 mt-4 mb-2 font-weight-bold" type="submit">
+                            <i class="fa fa-sign-in mr-1"></i> Log In
+                        </button>
+                        <hr>
+                        
+                        <div class="d-flex justify-content-center mb-1">
+                            <span class="text-center text-secondary login-copyright-1">
+                                &copy; 2025&nbsp;
+                            </span>
+
+                            <a href="https://gocloudgroup.com/" class="login-copyright-2">                                    
+                                <span class="text-center text-secondary">
+                                    GOCLOUD Inc.
+                                </span>
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="login-form-custom-container-2 col-xl-6 shadow">
+                    <img src="/static/images/3d-14.png" alt="3D Icon" class="timekeeping-icon">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".toggle-password").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    let input = document.getElementById(this.dataset.target);
+                    let icon = this.querySelector("i");
+                    if (input.type === "password") {
+                        input.type = "text";
+                        icon.classList.remove("fa-eye");
+                        icon.classList.add("fa-eye-slash");
+                    } else {
+                        input.type = "password";
+                        icon.classList.remove("fa-eye-slash");
+                        icon.classList.add("fa-eye");
+                    }
+                });
+            });
+        });
+    </script>
+    {% endif %}
+{% endblock %}
+
+{% block footer %}
+    {% if current_employee %}
+        <div>
+            <footer class="footer-custom text-white mt-auto">
+                <div class="footer-content-area text-center p-3">
+
+                    <div class="footer-logos d-flex justify-content-center mt-2 mb-2">
+                        <img src="/static/images/gc.png" alt="GC Logo" class="logo-img-gc mt-2 mx-2">
+                    </div>
+
+                    <div class="footer-copyright text-center text-dark p-3">
+                        © 2025 
+                        <a class="gc-link text-dark mb-2" href="https://gocloudgroup.com/">GOCLOUD Inc.</a>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    {% endif %}
+{% endblock %}
